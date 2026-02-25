@@ -23,6 +23,7 @@ const Index = () => {
       <ClientsSection />
       <PlansSection />
       <FinalCTA />
+
       <Footer />
     </div>
   );
