@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Mail, Phone, MapPin, Linkedin, Instagram, Youtube, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoImg from "@/assets/logo-purple.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -64,9 +65,8 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
           {/* Brand */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
-            <a href="#" className="font-display text-2xl font-bold inline-block mb-4">
-              <span className="text-gradient">GOAT</span>{" "}
-              <span className="text-foreground/80">Ibex</span>
+            <a href="#" className="inline-block mb-4">
+              <img src={logoImg} alt="Goat" className="h-10 w-auto" />
             </a>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">
               Sistema modular e inteligente para integração e automação de processos empresariais.
