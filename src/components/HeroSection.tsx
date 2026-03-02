@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import logoImg from "@/assets/logo-purple.png";
 
 const Block = ({ className, delay = 0 }: { className?: string; delay?: number }) => (
   <motion.div
@@ -83,61 +82,58 @@ const HeroSection = () => {
 
           {/* Visual: Animated Lego Blocks */}
           <div className="relative h-[400px] lg:h-[500px] hidden lg:flex items-center justify-center">
-            {/* Glow behind logo */}
+            {/* Central hub */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
-              className="absolute w-[350px] h-[350px] rounded-full bg-primary/10 blur-[80px]"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 0.6, scale: 1 }}
-              transition={{ delay: 0.5, duration: 1.2, ease: "easeOut" }}
-              className="absolute w-[200px] h-[200px] rounded-full bg-accent/15 blur-[60px]"
-            />
-
-            {/* Logo with dramatic entrance */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.3, rotateY: 90 }}
-              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-              transition={{ delay: 0.4, duration: 0.9, type: "spring", stiffness: 80, damping: 15 }}
-              className="relative z-10"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 120 }}
+              className="absolute w-24 h-24 rounded-2xl bg-gradient-primary shadow-glow-lg flex items-center justify-center z-10"
             >
-              <motion.img
-                src={logoImg}
-                alt="Goat Tecnologia"
-                className="w-[320px] h-auto drop-shadow-2xl"
-                animate={{ y: [0, -12, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              />
-              {/* Pulsing glow ring */}
-              <motion.div
-                className="absolute inset-0 -m-6 rounded-full border-2 border-primary/20"
-                animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              />
+              <span className="font-display font-bold text-primary-foreground text-xs text-center leading-tight">
+                GOAT<br />Core
+              </span>
             </motion.div>
 
-            {/* Floating labels around logo */}
+            {/* Surrounding blocks */}
+            <Block className="absolute w-20 h-16 top-8 left-16" delay={0.8} />
+            <Block className="absolute w-18 h-14 top-12 right-20" delay={1.0} />
+            <Block className="absolute w-22 h-16 bottom-20 left-12" delay={1.2} />
+            <Block className="absolute w-16 h-14 bottom-16 right-16" delay={1.4} />
+            <Block className="absolute w-14 h-12 top-1/3 left-4" delay={1.6} />
+            <Block className="absolute w-16 h-14 top-1/3 right-4" delay={1.8} />
+
+            {/* Connector lines */}
+            <ConnectorLine className="absolute w-16 top-[45%] left-[22%]" delay={2.0} />
+            <ConnectorLine className="absolute w-16 top-[45%] right-[22%]" delay={2.1} />
+            <ConnectorLine className="absolute w-12 top-[30%] left-[35%] rotate-45" delay={2.2} />
+            <ConnectorLine className="absolute w-12 bottom-[30%] right-[35%] -rotate-45" delay={2.3} />
+
+            {/* Floating labels */}
             {["Financeiro", "Vendas", "Estoque", "Fiscal", "Operações", "Dashboards"].map((label, i) => {
-              const angle = (i / 6) * 2 * Math.PI - Math.PI / 2;
-              const radius = 210;
-              const x = Math.cos(angle) * radius;
-              const y = Math.sin(angle) * radius;
+              const positions = [
+                "top-2 left-10",
+                "top-6 right-14",
+                "bottom-14 left-6",
+                "bottom-10 right-10",
+                "top-1/3 -left-2",
+                "top-1/3 -right-2",
+              ];
               return (
                 <motion.span
                   key={label}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.2 + i * 0.12, type: "spring", stiffness: 120 }}
-                  className="absolute text-xs font-medium text-accent font-display px-3 py-1 rounded-full border border-accent/20 bg-accent/5 backdrop-blur-sm"
-                  style={{ left: `calc(50% + ${x}px - 40px)`, top: `calc(50% + ${y}px - 12px)` }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 2.5 + i * 0.15 }}
+                  className={`absolute ${positions[i]} text-xs font-medium text-accent/70 font-display`}
                 >
                   {label}
                 </motion.span>
               );
             })}
+
+            {/* Glow orbs */}
+            <div className="absolute w-3 h-3 rounded-full bg-accent/60 animate-pulse top-20 left-24" />
+            <div className="absolute w-2 h-2 rounded-full bg-primary/60 animate-pulse bottom-24 right-24" />
           </div>
         </div>
       </div>
