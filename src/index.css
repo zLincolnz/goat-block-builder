@@ -24,7 +24,7 @@
     --muted: 270 12% 90%;
     --muted-foreground: 270 10% 40%;
 
-    --accent: 45 100% 45%;
+    --accent: 43 100% 50%;
     --accent-foreground: 270 30% 10%;
 
     --destructive: 0 84.2% 60.2%;
@@ -50,7 +50,7 @@
     --surface: 270 12% 95%;
     --surface-foreground: 270 30% 15%;
     --gradient-primary: linear-gradient(135deg, hsl(275, 85%, 40%), hsl(280, 90%, 55%));
-    --gradient-glow: linear-gradient(135deg, hsl(45, 100%, 45%), hsl(35, 100%, 40%));
+    --gradient-glow: linear-gradient(135deg, hsl(43, 100%, 50%), hsl(38, 100%, 45%));
     --shadow-glow: 0 0 40px -10px hsl(275 85% 40% / 0.3);
     --shadow-glow-lg: 0 0 80px -20px hsl(275 85% 40% / 0.25);
   }
