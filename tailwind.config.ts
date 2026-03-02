@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Space Grotesk"', 'sans-serif'],
+        display: ['"Tektur"', 'sans-serif'],
         body: ['"DM Sans"', 'sans-serif'],
       },
       colors: {

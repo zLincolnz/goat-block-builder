@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoImg from "@/assets/logo-purple.png";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,9 +17,8 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-        <a href="#" className="font-display text-2xl font-bold text-foreground">
-          <span className="text-gradient">GOAT</span>{" "}
-          <span className="text-foreground/80">Ibex</span>
+        <a href="#" className="flex items-center gap-2">
+          <img src={logoImg} alt="Goat" className="h-10 w-auto" />
         </a>
 
         {/* Desktop */}

@@ -35,7 +35,7 @@ const CTABanner = () => {
             <div className="flex flex-wrap justify-center gap-4">
               <Button
                 size="lg"
-                className="bg-white text-primary hover:bg-white/90 border-0 gap-2 text-base px-8 font-semibold shadow-lg"
+                className="bg-accent text-accent-foreground hover:bg-accent/90 border-0 gap-2 text-base px-8 font-semibold shadow-lg"
               >
                 Agendar Demonstração
                 <ArrowRight size={18} />
