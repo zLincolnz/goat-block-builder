@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 interface Node {
   x: number;
   y: number;
+  baseY: number;
   vx: number;
   vy: number;
   size: number;
@@ -13,6 +14,7 @@ interface Node {
   color: string;
   pulsePhase: number;
   pulseSpeed: number;
+  depth: number; // 0.3 to 1.0 — parallax layer
 }
 
 const COLORS = [
@@ -53,19 +55,23 @@ const AnimatedBackground = () => {
 
     for (let i = 0; i < count; i++) {
       const shape = shapes[Math.floor(Math.random() * shapes.length)];
+      const depth = 0.3 + Math.random() * 0.7; // parallax depth
+      const yPos = Math.random() * canvas.height;
       nodes.push({
         x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: (Math.random() - 0.5) * 0.15,
-        size: shape === "circle" ? Math.random() * 3 + 2 : Math.random() * 14 + 6,
+        y: yPos,
+        baseY: yPos,
+        vx: (Math.random() - 0.5) * 0.2 * depth,
+        vy: (Math.random() - 0.5) * 0.15 * depth,
+        size: (shape === "circle" ? Math.random() * 3 + 2 : Math.random() * 14 + 6) * (0.6 + depth * 0.4),
         opacity: 1,
         shape,
         rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.003,
+        rotationSpeed: (Math.random() - 0.5) * 0.003 * depth,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         pulsePhase: Math.random() * Math.PI * 2,
         pulseSpeed: 0.005 + Math.random() * 0.01,
+        depth,
       });
     }
     nodesRef.current = nodes;
@@ -155,17 +161,21 @@ const AnimatedBackground = () => {
       const viewTop = scrollY - 300;
       const viewBottom = scrollY + window.innerHeight + 300;
 
-      // Update & draw nodes
+      // Update & draw nodes with parallax
       for (const n of nodes) {
+        n.baseY += n.vy;
         n.x += n.vx;
-        n.y += n.vy;
         n.rotation += n.rotationSpeed;
         n.pulsePhase += n.pulseSpeed;
 
+        // Parallax offset: deeper nodes (depth~1) move with scroll, shallow ones lag behind
+        const parallaxOffset = scrollY * (1 - n.depth) * 0.15;
+        n.y = n.baseY - parallaxOffset;
+
         if (n.x < -60) n.x = canvas.width + 60;
         if (n.x > canvas.width + 60) n.x = -60;
-        if (n.y < -60) n.y = canvas.height + 60;
-        if (n.y > canvas.height + 60) n.y = -60;
+        if (n.baseY < -60) n.baseY = canvas.height + 60;
+        if (n.baseY > canvas.height + 60) n.baseY = -60;
 
         if (n.y < viewTop || n.y > viewBottom) continue;
 
