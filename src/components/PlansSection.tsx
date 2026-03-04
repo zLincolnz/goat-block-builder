@@ -1,7 +1,8 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Puzzle, Star, Zap, Crown, Settings, Plus } from "lucide-react";
-import { useState } from "react";
+import { Check, Puzzle, Star, Zap, Crown, Settings, Plus, Calculator, ShoppingCart } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const plans = [
   {
@@ -69,19 +70,37 @@ const plans = [
 ];
 
 const addons = [
-  { name: "Contas a Pagar/Receber", price: "19,99" },
-  { name: "Fluxo de Caixa", price: "14,99" },
-  { name: "Emissão NF-e", price: "29,99" },
-  { name: "Integração bancária extra", price: "9,99" },
-  { name: "Módulo de Vendas", price: "39,99" },
-  { name: "Gestão de Estoque", price: "34,99" },
-  { name: "Dashboard BI", price: "24,99" },
-  { name: "Usuário adicional", price: "7,99" },
+  { id: "contas", name: "Contas a Pagar/Receber", price: 19.99, category: "Financeiro" },
+  { id: "fluxo", name: "Fluxo de Caixa", price: 14.99, category: "Financeiro" },
+  { id: "nfe", name: "Emissão NF-e", price: 29.99, category: "Fiscal" },
+  { id: "banco", name: "Integração bancária extra", price: 9.99, category: "Integração" },
+  { id: "vendas", name: "Módulo de Vendas", price: 39.99, category: "Vendas" },
+  { id: "estoque", name: "Gestão de Estoque", price: 34.99, category: "Operações" },
+  { id: "bi", name: "Dashboard BI", price: 24.99, category: "Dashboards" },
+  { id: "usuario", name: "Usuário adicional", price: 7.99, category: "Geral" },
 ];
+
+const basePrice = { annual: 69.90, monthly: 87.38 };
 
 const PlansSection = () => {
   const [isAnnual, setIsAnnual] = useState(true);
-  const [showAddons, setShowAddons] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+
+  const toggleAddon = (id: string) => {
+    setSelectedAddons((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+    );
+  };
+
+  const { total, addonTotal } = useMemo(() => {
+    const base = isAnnual ? basePrice.annual : basePrice.monthly;
+    const addonsSum = selectedAddons.reduce((sum, id) => {
+      const addon = addons.find((a) => a.id === id);
+      return sum + (addon ? addon.price : 0);
+    }, 0);
+    return { total: base + addonsSum, addonTotal: addonsSum };
+  }, [selectedAddons, isAnnual]);
 
   return (
     <section id="planos" className="py-24 relative">
@@ -240,55 +259,109 @@ const PlansSection = () => {
               <Button
                 variant="outline"
                 className="border-accent/40 text-accent hover:bg-accent/10 gap-2 shrink-0"
-                onClick={() => setShowAddons(!showAddons)}
+                onClick={() => setShowSimulator(!showSimulator)}
               >
-                <Plus size={16} className={`transition-transform ${showAddons ? "rotate-45" : ""}`} />
-                {showAddons ? "Ocultar módulos" : "Ver módulos e preços"}
+                <Calculator size={16} />
+                {showSimulator ? "Fechar simulador" : "Simular meu plano"}
               </Button>
             </div>
 
-            {showAddons && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border/50"
-              >
-                {addons.map((addon, i) => (
-                  <motion.div
-                    key={addon.name}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary/80 hover:border-accent/20 border border-transparent transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-accent group-hover:scale-110 transition-transform">🧩</span>
-                      <span className="text-sm text-foreground/80">{addon.name}</span>
+            <AnimatePresence>
+              {showSimulator && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-6 pt-6 border-t border-border/50">
+                    {/* Base plan info */}
+                    <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                      <Zap size={18} className="text-primary" />
+                      <span className="text-sm text-foreground">
+                        <span className="font-semibold">Base Starter inclusa</span>
+                        <span className="text-muted-foreground"> — R$ {isAnnual ? "69,90" : "87,38"}/mês</span>
+                      </span>
                     </div>
-                    <span className="text-xs font-bold text-accent whitespace-nowrap">
-                      +R$ {addon.price}
-                    </span>
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
 
-            {showAddons && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mt-6 pt-4 border-t border-border/30 flex flex-col sm:flex-row items-center justify-between gap-4"
-              >
-                <p className="text-sm text-muted-foreground">
-                  Exemplo: <span className="text-foreground font-medium">Starter + Contas a Pagar + NF-e</span> = <span className="text-accent font-bold">R$ 119,88/mês</span>
-                </p>
-                <Button className="bg-gradient-primary hover:opacity-90 text-primary-foreground border-0 shadow-glow gap-2">
-                  <Puzzle size={16} />
-                  Solicitar Proposta
-                </Button>
-              </motion.div>
-            )}
+                    {/* Addon grid with checkboxes */}
+                    <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <ShoppingCart size={14} className="text-accent" />
+                      Selecione os módulos que deseja adicionar:
+                    </p>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {addons.map((addon, i) => {
+                        const isSelected = selectedAddons.includes(addon.id);
+                        return (
+                          <motion.label
+                            key={addon.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.04 }}
+                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none ${
+                              isSelected
+                                ? "bg-accent/10 border-accent/40 shadow-[0_0_12px_hsl(var(--accent)/0.15)]"
+                                : "bg-secondary/50 border-transparent hover:border-accent/20 hover:bg-secondary/80"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleAddon(addon.id)}
+                              className="border-accent/40 data-[state=checked]:bg-accent data-[state=checked]:border-accent"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-foreground/90 block truncate">{addon.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{addon.category}</span>
+                            </div>
+                            <span className="text-xs font-bold text-accent whitespace-nowrap">
+                              +R$ {addon.price.toFixed(2).replace(".", ",")}
+                            </span>
+                          </motion.label>
+                        );
+                      })}
+                    </div>
+
+                    {/* Live total */}
+                    <motion.div
+                      layout
+                      className="mt-6 pt-4 border-t border-border/30 flex flex-col sm:flex-row items-center justify-between gap-4"
+                    >
+                      <div className="text-center sm:text-left">
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {selectedAddons.length === 0
+                            ? "Selecione módulos acima para simular"
+                            : `${selectedAddons.length} módulo${selectedAddons.length > 1 ? "s" : ""} selecionado${selectedAddons.length > 1 ? "s" : ""}`}
+                        </p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-muted-foreground text-sm">Total:</span>
+                          <motion.span
+                            key={total.toFixed(2)}
+                            initial={{ scale: 1.15, color: "hsl(var(--accent))" }}
+                            animate={{ scale: 1, color: "hsl(var(--foreground))" }}
+                            className="font-display text-3xl font-bold"
+                          >
+                            R$ {total.toFixed(2).replace(".", ",")}
+                          </motion.span>
+                          <span className="text-muted-foreground text-sm">/mês</span>
+                        </div>
+                        {addonTotal > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Base R$ {isAnnual ? "69,90" : "87,38"} + Módulos R$ {addonTotal.toFixed(2).replace(".", ",")}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        className="bg-gradient-primary hover:opacity-90 text-primary-foreground border-0 shadow-glow gap-2"
+                        disabled={selectedAddons.length === 0}
+                      >
+                        <Puzzle size={16} />
+                        Solicitar Proposta
+                      </Button>
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
 
