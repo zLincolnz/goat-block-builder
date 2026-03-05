@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface SubPiece {
   label: string;
@@ -24,68 +24,141 @@ const modules: ModuleData[] = [
   {
     label: "Financeiro",
     icon: "💰",
-    color: "hsla(275, 60%, 30%, 0.12)",
-    border: "hsla(275, 85%, 55%, 0.4)",
-    glow: "hsla(275, 85%, 55%, 0.15)",
+    color: "hsla(275, 60%, 30%, 0.15)",
+    border: "hsla(275, 85%, 55%, 0.5)",
+    glow: "hsla(275, 85%, 55%, 0.2)",
     subPieces: [
-      { label: "Contas a Pagar", delay: 0.3 },
-      { label: "Contas a Receber", delay: 0.5 },
-      { label: "Fluxo de Caixa", delay: 0.7 },
-      { label: "Conciliação", delay: 0.9 },
+      { label: "Contas a Pagar", delay: 0.2 },
+      { label: "Contas a Receber", delay: 0.4 },
+      { label: "Fluxo de Caixa", delay: 0.6 },
+      { label: "Conciliação", delay: 0.8 },
     ],
     position: { x: 0, y: 0 },
-    startFrom: { x: -200, y: -80, rotate: -15 },
+    startFrom: { x: -250, y: -120, rotate: -20 },
     delay: 0.6,
   },
   {
     label: "Vendas",
     icon: "📊",
-    color: "hsla(43, 80%, 45%, 0.12)",
-    border: "hsla(43, 100%, 55%, 0.4)",
-    glow: "hsla(43, 100%, 55%, 0.15)",
+    color: "hsla(43, 80%, 45%, 0.15)",
+    border: "hsla(43, 100%, 55%, 0.5)",
+    glow: "hsla(43, 100%, 55%, 0.2)",
     subPieces: [
-      { label: "Pedidos", delay: 0.3 },
-      { label: "Comissões", delay: 0.5 },
-      { label: "Orçamentos", delay: 0.7 },
-      { label: "CRM", delay: 0.9 },
+      { label: "Pedidos", delay: 0.2 },
+      { label: "Comissões", delay: 0.4 },
+      { label: "Orçamentos", delay: 0.6 },
+      { label: "CRM", delay: 0.8 },
     ],
     position: { x: 1, y: 0 },
-    startFrom: { x: 200, y: -60, rotate: 12 },
+    startFrom: { x: 250, y: -100, rotate: 15 },
     delay: 1.0,
   },
   {
     label: "Estoque",
     icon: "📦",
-    color: "hsla(160, 60%, 30%, 0.12)",
-    border: "hsla(160, 70%, 45%, 0.4)",
-    glow: "hsla(160, 70%, 45%, 0.15)",
+    color: "hsla(160, 60%, 30%, 0.15)",
+    border: "hsla(160, 70%, 45%, 0.5)",
+    glow: "hsla(160, 70%, 45%, 0.2)",
     subPieces: [
-      { label: "Inventário", delay: 0.3 },
-      { label: "Movimentação", delay: 0.5 },
-      { label: "Lote / Validade", delay: 0.7 },
-      { label: "Compras", delay: 0.9 },
+      { label: "Inventário", delay: 0.2 },
+      { label: "Movimentação", delay: 0.4 },
+      { label: "Lote / Validade", delay: 0.6 },
+      { label: "Compras", delay: 0.8 },
     ],
     position: { x: 0, y: 1 },
-    startFrom: { x: -180, y: 120, rotate: 18 },
+    startFrom: { x: -220, y: 150, rotate: 22 },
     delay: 1.4,
   },
   {
     label: "Fiscal",
     icon: "📋",
-    color: "hsla(210, 60%, 30%, 0.12)",
-    border: "hsla(210, 80%, 55%, 0.4)",
-    glow: "hsla(210, 80%, 55%, 0.15)",
+    color: "hsla(210, 60%, 30%, 0.15)",
+    border: "hsla(210, 80%, 55%, 0.5)",
+    glow: "hsla(210, 80%, 55%, 0.2)",
     subPieces: [
-      { label: "NF-e / NFS-e", delay: 0.3 },
-      { label: "SPED", delay: 0.5 },
-      { label: "Apuração", delay: 0.7 },
-      { label: "DARF", delay: 0.9 },
+      { label: "NF-e / NFS-e", delay: 0.2 },
+      { label: "SPED", delay: 0.4 },
+      { label: "Apuração", delay: 0.6 },
+      { label: "DARF", delay: 0.8 },
     ],
     position: { x: 1, y: 1 },
-    startFrom: { x: 220, y: 100, rotate: -20 },
+    startFrom: { x: 260, y: 130, rotate: -18 },
     delay: 1.8,
   },
 ];
+
+// Generate puzzle piece SVG path
+// Each piece has tabs (outward bumps) and slots (inward notches) based on position
+function puzzlePath(
+  w: number,
+  h: number,
+  pos: { x: number; y: number },
+  tab: number = 14,
+  neck: number = 8
+): string {
+  // pos.x=0 means left column, pos.x=1 means right column
+  // pos.y=0 means top row, pos.y=1 means bottom row
+  // Left col: tab on right. Right col: slot on left.
+  // Top row: tab on bottom. Bottom row: slot on top.
+
+  const hasTabRight = pos.x === 0;
+  const hasSlotLeft = pos.x === 1;
+  const hasTabBottom = pos.y === 0;
+  const hasSlotTop = pos.y === 1;
+
+  let d = "";
+
+  // Start top-left
+  d += `M 0 0 `;
+
+  // Top edge
+  if (hasSlotTop) {
+    const mid = w / 2;
+    d += `L ${mid - neck} 0 `;
+    d += `C ${mid - neck} ${tab}, ${mid + neck} ${tab}, ${mid + neck} 0 `;
+    d += `L ${w} 0 `;
+  } else {
+    d += `L ${w} 0 `;
+  }
+
+  // Right edge
+  if (hasTabRight) {
+    const mid = h / 2;
+    d += `L ${w} ${mid - neck} `;
+    d += `C ${w + tab} ${mid - neck}, ${w + tab} ${mid + neck}, ${w} ${mid + neck} `;
+    d += `L ${w} ${h} `;
+  } else {
+    d += `L ${w} ${h} `;
+  }
+
+  // Bottom edge (right to left)
+  if (hasTabBottom) {
+    const mid = w / 2;
+    d += `L ${mid + neck} ${h} `;
+    d += `C ${mid + neck} ${h + tab}, ${mid - neck} ${h + tab}, ${mid - neck} ${h} `;
+    d += `L 0 ${h} `;
+  } else {
+    d += `L 0 ${h} `;
+  }
+
+  // Left edge (bottom to top)
+  if (hasSlotLeft) {
+    const mid = h / 2;
+    d += `L 0 ${mid + neck} `;
+    d += `C ${-tab} ${mid + neck}, ${-tab} ${mid - neck}, 0 ${mid - neck} `;
+    d += `L 0 0 `;
+  } else {
+    d += `L 0 0 `;
+  }
+
+  d += "Z";
+  return d;
+}
+
+const PIECE_W = 180;
+const PIECE_H = 190;
+const TAB = 16;
+const NECK = 10;
 
 const ModulePiece = ({ mod }: { mod: ModuleData }) => {
   const [showSubs, setShowSubs] = useState(false);
@@ -95,15 +168,37 @@ const ModulePiece = ({ mod }: { mod: ModuleData }) => {
     return () => clearTimeout(timer);
   }, [mod.delay]);
 
+  const clipId = `puzzle-${mod.label}`;
+  const path = useMemo(
+    () => puzzlePath(PIECE_W, PIECE_H, mod.position, TAB, NECK),
+    [mod.position]
+  );
+
+  // SVG viewBox needs extra space for tabs
+  const vbX = mod.position.x === 1 ? -TAB : 0;
+  const vbW = PIECE_W + TAB + (mod.position.x === 1 ? TAB : 0);
+  const vbY = mod.position.y === 1 ? -TAB : 0;
+  const vbH = PIECE_H + TAB + (mod.position.y === 1 ? TAB : 0);
+
+  // Offset for clip-path positioning
+  const marginLeft = mod.position.x === 1 ? -TAB : 0;
+  const marginTop = mod.position.y === 1 ? -TAB : 0;
+
   return (
     <motion.div
       className="relative"
+      style={{
+        width: PIECE_W + (mod.position.x === 0 ? TAB : 0),
+        height: PIECE_H + (mod.position.y === 0 ? TAB : 0),
+        marginLeft: mod.position.x === 1 ? -TAB : 0,
+        marginTop: mod.position.y === 1 ? -TAB : 0,
+      }}
       initial={{
         x: mod.startFrom.x,
         y: mod.startFrom.y,
         rotate: mod.startFrom.rotate,
         opacity: 0,
-        scale: 0.7,
+        scale: 0.6,
       }}
       animate={{
         x: 0,
@@ -114,159 +209,103 @@ const ModulePiece = ({ mod }: { mod: ModuleData }) => {
       }}
       transition={{
         delay: mod.delay,
-        duration: 0.9,
+        duration: 1,
         type: "spring",
-        stiffness: 70,
-        damping: 15,
+        stiffness: 60,
+        damping: 14,
       }}
     >
-      {/* Main module card */}
+      {/* SVG for clip-path definition */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+            <path d={path} />
+          </clipPath>
+        </defs>
+      </svg>
+
+      {/* Puzzle-shaped card */}
       <motion.div
-        className="relative w-[170px] h-[170px] rounded-2xl border backdrop-blur-sm overflow-hidden cursor-default"
+        className="absolute inset-0 backdrop-blur-sm cursor-default overflow-visible"
         style={{
+          clipPath: `url(#${clipId})`,
           backgroundColor: mod.color,
-          borderColor: mod.border,
-          boxShadow: `0 0 30px ${mod.glow}`,
+          boxShadow: `0 0 40px ${mod.glow}, inset 0 1px 0 ${mod.border}`,
         }}
-        whileHover={{ scale: 1.04, boxShadow: `0 0 50px ${mod.glow}` }}
+        whileHover={{ scale: 1.04 }}
         transition={{ duration: 0.2 }}
       >
-        {/* Puzzle tab connectors */}
-        {mod.position.x === 0 && (
-          <div
-            className="absolute -right-[8px] top-1/2 -translate-y-1/2 w-4 h-6 rounded-r-full"
-            style={{ backgroundColor: mod.border, opacity: 0.5 }}
+        {/* Border overlay via SVG */}
+        <svg
+          className="absolute pointer-events-none"
+          style={{
+            top: 0,
+            left: 0,
+            width: PIECE_W + TAB,
+            height: PIECE_H + TAB,
+            overflow: "visible",
+          }}
+        >
+          <path
+            d={path}
+            fill="none"
+            stroke={mod.border}
+            strokeWidth="1.5"
           />
-        )}
-        {mod.position.x === 1 && (
-          <div
-            className="absolute -left-[8px] top-1/2 -translate-y-1/2 w-4 h-6 rounded-l-full"
-            style={{ backgroundColor: mod.border, opacity: 0.5 }}
-          />
-        )}
-        {mod.position.y === 0 && (
-          <div
-            className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-6 h-4 rounded-b-full"
-            style={{ backgroundColor: mod.border, opacity: 0.5 }}
-          />
-        )}
-        {mod.position.y === 1 && (
-          <div
-            className="absolute -top-[8px] left-1/2 -translate-x-1/2 w-6 h-4 rounded-t-full"
-            style={{ backgroundColor: mod.border, opacity: 0.5 }}
-          />
-        )}
+        </svg>
 
-        {/* Module header */}
-        <div className="px-3 pt-3 pb-2 flex items-center gap-2">
-          <span className="text-lg">{mod.icon}</span>
-          <span className="text-xs font-bold text-foreground/90 tracking-wide uppercase">
-            {mod.label}
-          </span>
-        </div>
+        {/* Content */}
+        <div className="relative z-10 p-4 pt-3">
+          {/* Module header */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">{mod.icon}</span>
+            <span className="text-xs font-bold text-foreground/90 tracking-wider uppercase">
+              {mod.label}
+            </span>
+          </div>
 
-        {/* Sub-pieces */}
-        <div className="px-2.5 space-y-1">
-          <AnimatePresence>
-            {showSubs &&
-              mod.subPieces.map((sub, i) => (
-                <motion.div
-                  key={sub.label}
-                  initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  transition={{
-                    delay: sub.delay,
-                    duration: 0.4,
-                    type: "spring",
-                    stiffness: 120,
-                    damping: 12,
-                  }}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-medium text-foreground/75"
-                  style={{
-                    borderColor: mod.border,
-                    backgroundColor: `${mod.color}`,
-                  }}
-                >
+          {/* Sub-pieces */}
+          <div className="space-y-1.5">
+            <AnimatePresence>
+              {showSubs &&
+                mod.subPieces.map((sub, i) => (
                   <motion.div
-                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: mod.border }}
-                    animate={{
-                      scale: [1, 1.4, 1],
-                      opacity: [0.7, 1, 0.7],
-                    }}
+                    key={sub.label}
+                    initial={{ opacity: 0, x: -16, scale: 0.85 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
                     transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      delay: i * 0.5,
+                      delay: sub.delay,
+                      duration: 0.4,
+                      type: "spring",
+                      stiffness: 120,
+                      damping: 12,
                     }}
-                  />
-                  {sub.label}
-                </motion.div>
-              ))}
-          </AnimatePresence>
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-[10px] font-medium text-foreground/80"
+                    style={{
+                      borderColor: mod.border,
+                      backgroundColor: mod.color,
+                    }}
+                  >
+                    <motion.div
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: mod.border }}
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [0.6, 1, 0.6],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        delay: i * 0.4,
+                      }}
+                    />
+                    {sub.label}
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+          </div>
         </div>
       </motion.div>
-    </motion.div>
-  );
-};
-
-// Connection lines between modules
-const ConnectionLines = () => {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setShow(true), 2800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!show) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-      className="absolute inset-0 pointer-events-none"
-    >
-      <svg className="w-full h-full absolute inset-0" style={{ overflow: "visible" }}>
-        {/* Horizontal line */}
-        <motion.line
-          x1="48%" y1="35%" x2="52%" y2="35%"
-          stroke="hsla(275, 85%, 55%, 0.3)"
-          strokeWidth="2"
-          strokeDasharray="4 4"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.6 }}
-        />
-        <motion.line
-          x1="48%" y1="65%" x2="52%" y2="65%"
-          stroke="hsla(275, 85%, 55%, 0.3)"
-          strokeWidth="2"
-          strokeDasharray="4 4"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        />
-        {/* Vertical lines */}
-        <motion.line
-          x1="35%" y1="48%" x2="35%" y2="52%"
-          stroke="hsla(275, 85%, 55%, 0.3)"
-          strokeWidth="2"
-          strokeDasharray="4 4"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        />
-        <motion.line
-          x1="65%" y1="48%" x2="65%" y2="52%"
-          stroke="hsla(275, 85%, 55%, 0.3)"
-          strokeWidth="2"
-          strokeDasharray="4 4"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        />
-      </svg>
     </motion.div>
   );
 };
@@ -379,14 +418,11 @@ const HeroSection = () => {
             {/* Ambient glow */}
             <div className="absolute w-[400px] h-[400px] bg-primary/6 blur-[80px] rounded-full" />
 
-            {/* 2x2 Grid of modules */}
-            <div className="relative grid grid-cols-2 gap-4">
+            {/* 2x2 Grid of puzzle pieces */}
+            <div className="relative grid grid-cols-2" style={{ gap: "2px" }}>
               {modules.map((mod) => (
                 <ModulePiece key={mod.label} mod={mod} />
               ))}
-
-              {/* Connection lines */}
-              <ConnectionLines />
 
               {/* Central GOAT Core badge */}
               <CoreBadge />
