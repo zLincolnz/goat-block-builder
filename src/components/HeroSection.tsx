@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 interface SubPiece {
   label: string;
@@ -87,78 +87,126 @@ const modules: ModuleData[] = [
   },
 ];
 
-// Generate puzzle piece SVG path
-// Each piece has tabs (outward bumps) and slots (inward notches) based on position
-function puzzlePath(
-  w: number,
-  h: number,
-  pos: { x: number; y: number },
-  tab: number = 14,
-  neck: number = 8
-): string {
-  // pos.x=0 means left column, pos.x=1 means right column
-  // pos.y=0 means top row, pos.y=1 means bottom row
-  // Left col: tab on right. Right col: slot on left.
-  // Top row: tab on bottom. Bottom row: slot on top.
+// Puzzle piece dimensions
+const W = 200;
+const H = 210;
+const TAB = 20;
+const NECK = 14;
 
-  const hasTabRight = pos.x === 0;
-  const hasSlotLeft = pos.x === 1;
-  const hasTabBottom = pos.y === 0;
-  const hasSlotTop = pos.y === 1;
+// Build SVG path for puzzle piece shape
+function buildPuzzlePath(pos: { x: number; y: number }): string {
+  const tabRight = pos.x === 0;
+  const slotLeft = pos.x === 1;
+  const tabBottom = pos.y === 0;
+  const slotTop = pos.y === 1;
 
-  let d = "";
+  // We work in a coordinate space where content area is from (TAB, TAB) to (TAB+W, TAB+H)
+  // Extra TAB padding on all sides for tabs/slots
+  const l = TAB; // left of content
+  const t = TAB; // top of content
+  const r = TAB + W; // right of content
+  const b = TAB + H; // bottom of content
 
-  // Start top-left
-  d += `M 0 0 `;
+  const midX = (l + r) / 2;
+  const midY = (t + b) / 2;
+
+  let d = `M ${l} ${t} `;
 
   // Top edge
-  if (hasSlotTop) {
-    const mid = w / 2;
-    d += `L ${mid - neck} 0 `;
-    d += `C ${mid - neck} ${tab}, ${mid + neck} ${tab}, ${mid + neck} 0 `;
-    d += `L ${w} 0 `;
+  if (slotTop) {
+    d += `L ${midX - NECK} ${t} `;
+    d += `A ${NECK} ${NECK} 0 0 1 ${midX + NECK} ${t} `;
+    d += `L ${r} ${t} `;
   } else {
-    d += `L ${w} 0 `;
+    d += `L ${r} ${t} `;
   }
 
   // Right edge
-  if (hasTabRight) {
-    const mid = h / 2;
-    d += `L ${w} ${mid - neck} `;
-    d += `C ${w + tab} ${mid - neck}, ${w + tab} ${mid + neck}, ${w} ${mid + neck} `;
-    d += `L ${w} ${h} `;
+  if (tabRight) {
+    d += `L ${r} ${midY - NECK} `;
+    d += `A ${NECK} ${NECK} 0 0 1 ${r} ${midY + NECK} `;
+    d += `L ${r} ${b} `;
   } else {
-    d += `L ${w} ${h} `;
+    d += `L ${r} ${b} `;
   }
 
   // Bottom edge (right to left)
-  if (hasTabBottom) {
-    const mid = w / 2;
-    d += `L ${mid + neck} ${h} `;
-    d += `C ${mid + neck} ${h + tab}, ${mid - neck} ${h + tab}, ${mid - neck} ${h} `;
-    d += `L 0 ${h} `;
+  if (tabBottom) {
+    d += `L ${midX + NECK} ${b} `;
+    d += `A ${NECK} ${NECK} 0 0 1 ${midX - NECK} ${b} `;
+    d += `L ${l} ${b} `;
   } else {
-    d += `L 0 ${h} `;
+    d += `L ${l} ${b} `;
   }
 
   // Left edge (bottom to top)
-  if (hasSlotLeft) {
-    const mid = h / 2;
-    d += `L 0 ${mid + neck} `;
-    d += `C ${-tab} ${mid + neck}, ${-tab} ${mid - neck}, 0 ${mid - neck} `;
-    d += `L 0 0 `;
+  if (slotLeft) {
+    d += `L ${l} ${midY + NECK} `;
+    d += `A ${NECK} ${NECK} 0 0 1 ${l} ${midY - NECK} `;
+    d += `L ${l} ${t} `;
   } else {
-    d += `L 0 0 `;
+    d += `L ${l} ${t} `;
   }
 
   d += "Z";
   return d;
 }
 
-const PIECE_W = 180;
-const PIECE_H = 190;
-const TAB = 16;
-const NECK = 10;
+// Use cubic bezier for smoother tab/slot shapes
+function buildPuzzlePathSmooth(pos: { x: number; y: number }): string {
+  const tabRight = pos.x === 0;
+  const slotLeft = pos.x === 1;
+  const tabBottom = pos.y === 0;
+  const slotTop = pos.y === 1;
+
+  const l = TAB;
+  const t = TAB;
+  const r = TAB + W;
+  const b = TAB + H;
+  const midX = (l + r) / 2;
+  const midY = (t + b) / 2;
+  const tabSize = TAB;
+
+  let d = `M ${l} ${t} `;
+
+  // Top edge
+  if (slotTop) {
+    // slot = inward bump (goes into the piece)
+    d += `L ${midX - NECK} ${t} `;
+    d += `C ${midX - NECK} ${t + tabSize * 0.3}, ${midX - tabSize * 0.6} ${t - tabSize}, ${midX} ${t - tabSize} `;
+    d += `C ${midX + tabSize * 0.6} ${t - tabSize}, ${midX + NECK} ${t + tabSize * 0.3}, ${midX + NECK} ${t} `;
+  }
+  d += `L ${r} ${t} `;
+
+  // Right edge
+  if (tabRight) {
+    d += `L ${r} ${midY - NECK} `;
+    d += `C ${r + tabSize * 0.3} ${midY - NECK}, ${r + tabSize} ${midY - tabSize * 0.6}, ${r + tabSize} ${midY} `;
+    d += `C ${r + tabSize} ${midY + tabSize * 0.6}, ${r + tabSize * 0.3} ${midY + NECK}, ${r} ${midY + NECK} `;
+  }
+  d += `L ${r} ${b} `;
+
+  // Bottom edge
+  if (tabBottom) {
+    d += `L ${midX + NECK} ${b} `;
+    d += `C ${midX + NECK} ${b + tabSize * 0.3}, ${midX + tabSize * 0.6} ${b + tabSize}, ${midX} ${b + tabSize} `;
+    d += `C ${midX - tabSize * 0.6} ${b + tabSize}, ${midX - NECK} ${b + tabSize * 0.3}, ${midX - NECK} ${b} `;
+  }
+  d += `L ${l} ${b} `;
+
+  // Left edge
+  if (slotLeft) {
+    d += `L ${l} ${midY + NECK} `;
+    d += `C ${l - tabSize * 0.3} ${midY + NECK}, ${l - tabSize} ${midY + tabSize * 0.6}, ${l - tabSize} ${midY} `;
+    d += `C ${l - tabSize} ${midY - tabSize * 0.6}, ${l - tabSize * 0.3} ${midY - NECK}, ${l} ${midY - NECK} `;
+  }
+  d += `L ${l} ${t} Z`;
+
+  return d;
+}
+
+const TOTAL_W = W + TAB * 2;
+const TOTAL_H = H + TAB * 2;
 
 const ModulePiece = ({ mod }: { mod: ModuleData }) => {
   const [showSubs, setShowSubs] = useState(false);
@@ -168,30 +216,17 @@ const ModulePiece = ({ mod }: { mod: ModuleData }) => {
     return () => clearTimeout(timer);
   }, [mod.delay]);
 
-  const clipId = `puzzle-${mod.label}`;
-  const path = useMemo(
-    () => puzzlePath(PIECE_W, PIECE_H, mod.position, TAB, NECK),
-    [mod.position]
-  );
-
-  // SVG viewBox needs extra space for tabs
-  const vbX = mod.position.x === 1 ? -TAB : 0;
-  const vbW = PIECE_W + TAB + (mod.position.x === 1 ? TAB : 0);
-  const vbY = mod.position.y === 1 ? -TAB : 0;
-  const vbH = PIECE_H + TAB + (mod.position.y === 1 ? TAB : 0);
-
-  // Offset for clip-path positioning
-  const marginLeft = mod.position.x === 1 ? -TAB : 0;
-  const marginTop = mod.position.y === 1 ? -TAB : 0;
+  const path = buildPuzzlePathSmooth(mod.position);
 
   return (
     <motion.div
       className="relative"
       style={{
-        width: PIECE_W + (mod.position.x === 0 ? TAB : 0),
-        height: PIECE_H + (mod.position.y === 0 ? TAB : 0),
-        marginLeft: mod.position.x === 1 ? -TAB : 0,
-        marginTop: mod.position.y === 1 ? -TAB : 0,
+        width: TOTAL_W,
+        height: TOTAL_H,
+        // Overlap pieces so tabs fit into adjacent slots
+        marginRight: mod.position.x === 0 ? -TAB * 2 : 0,
+        marginBottom: mod.position.y === 0 ? -TAB * 2 : 0,
       }}
       initial={{
         x: mod.startFrom.x,
@@ -215,97 +250,93 @@ const ModulePiece = ({ mod }: { mod: ModuleData }) => {
         damping: 14,
       }}
     >
-      {/* SVG for clip-path definition */}
-      <svg width="0" height="0" style={{ position: "absolute" }}>
+      {/* SVG puzzle shape */}
+      <svg
+        width={TOTAL_W}
+        height={TOTAL_H}
+        viewBox={`0 0 ${TOTAL_W} ${TOTAL_H}`}
+        className="absolute inset-0"
+        style={{ overflow: "visible" }}
+      >
         <defs>
-          <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
-            <path d={path} />
-          </clipPath>
+          <filter id={`glow-${mod.label}`}>
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
+        {/* Fill */}
+        <motion.path
+          d={path}
+          fill={mod.color}
+          stroke={mod.border}
+          strokeWidth="1.5"
+          filter={`url(#glow-${mod.label})`}
+          whileHover={{ filter: "brightness(1.2)" }}
+        />
       </svg>
 
-      {/* Puzzle-shaped card */}
-      <motion.div
-        className="absolute inset-0 backdrop-blur-sm cursor-default overflow-visible"
+      {/* Content overlay */}
+      <div
+        className="absolute z-10 flex flex-col"
         style={{
-          clipPath: `url(#${clipId})`,
-          backgroundColor: mod.color,
-          boxShadow: `0 0 40px ${mod.glow}, inset 0 1px 0 ${mod.border}`,
+          top: TAB,
+          left: TAB,
+          width: W,
+          height: H,
         }}
-        whileHover={{ scale: 1.04 }}
-        transition={{ duration: 0.2 }}
       >
-        {/* Border overlay via SVG */}
-        <svg
-          className="absolute pointer-events-none"
-          style={{
-            top: 0,
-            left: 0,
-            width: PIECE_W + TAB,
-            height: PIECE_H + TAB,
-            overflow: "visible",
-          }}
-        >
-          <path
-            d={path}
-            fill="none"
-            stroke={mod.border}
-            strokeWidth="1.5"
-          />
-        </svg>
-
-        {/* Content */}
-        <div className="relative z-10 p-4 pt-3">
-          {/* Module header */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">{mod.icon}</span>
-            <span className="text-xs font-bold text-foreground/90 tracking-wider uppercase">
-              {mod.label}
-            </span>
-          </div>
-
-          {/* Sub-pieces */}
-          <div className="space-y-1.5">
-            <AnimatePresence>
-              {showSubs &&
-                mod.subPieces.map((sub, i) => (
-                  <motion.div
-                    key={sub.label}
-                    initial={{ opacity: 0, x: -16, scale: 0.85 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{
-                      delay: sub.delay,
-                      duration: 0.4,
-                      type: "spring",
-                      stiffness: 120,
-                      damping: 12,
-                    }}
-                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-[10px] font-medium text-foreground/80"
-                    style={{
-                      borderColor: mod.border,
-                      backgroundColor: mod.color,
-                    }}
-                  >
-                    <motion.div
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: mod.border }}
-                      animate={{
-                        scale: [1, 1.5, 1],
-                        opacity: [0.6, 1, 0.6],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.4,
-                      }}
-                    />
-                    {sub.label}
-                  </motion.div>
-                ))}
-            </AnimatePresence>
-          </div>
+        {/* Module header */}
+        <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+          <span className="text-xl">{mod.icon}</span>
+          <span className="text-xs font-bold text-foreground/90 tracking-wider uppercase">
+            {mod.label}
+          </span>
         </div>
-      </motion.div>
+
+        {/* Sub-pieces */}
+        <div className="px-3 space-y-1.5 flex-1">
+          <AnimatePresence>
+            {showSubs &&
+              mod.subPieces.map((sub, i) => (
+                <motion.div
+                  key={sub.label}
+                  initial={{ opacity: 0, x: -16, scale: 0.85 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{
+                    delay: sub.delay,
+                    duration: 0.4,
+                    type: "spring",
+                    stiffness: 120,
+                    damping: 12,
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-[10px] font-medium text-foreground/80"
+                  style={{
+                    borderColor: mod.border,
+                    backgroundColor: mod.color,
+                  }}
+                >
+                  <motion.div
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: mod.border }}
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.6, 1, 0.6],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      delay: i * 0.4,
+                    }}
+                  />
+                  {sub.label}
+                </motion.div>
+              ))}
+          </AnimatePresence>
+        </div>
+      </div>
     </motion.div>
   );
 };
@@ -325,7 +356,7 @@ const CoreBadge = () => {
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 15 }}
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20"
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30"
     >
       <motion.div
         className="w-16 h-16 rounded-xl bg-gradient-primary flex flex-col items-center justify-center shadow-glow-lg border border-primary/30"
@@ -414,12 +445,12 @@ const HeroSection = () => {
           </motion.div>
 
           {/* Visual: Puzzle Assembly */}
-          <div className="relative h-[480px] lg:h-[540px] hidden lg:flex items-center justify-center">
+          <div className="relative h-[520px] lg:h-[560px] hidden lg:flex items-center justify-center">
             {/* Ambient glow */}
             <div className="absolute w-[400px] h-[400px] bg-primary/6 blur-[80px] rounded-full" />
 
             {/* 2x2 Grid of puzzle pieces */}
-            <div className="relative grid grid-cols-2" style={{ gap: "2px" }}>
+            <div className="relative grid grid-cols-2">
               {modules.map((mod) => (
                 <ModulePiece key={mod.label} mod={mod} />
               ))}
