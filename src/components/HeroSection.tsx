@@ -1,296 +1,310 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 
-// Puzzle piece SVG path with interlocking tabs
-const puzzlePath = (tabs: { top: number; right: number; bottom: number; left: number }) => {
-  const s = 100; // piece size
-  const t = 18; // tab size
-  const r = 8; // tab radius
-
-  const tabBump = (dir: number) => {
-    if (dir === 0) return "";
-    const sign = dir === 1 ? 1 : -1;
-    return `c 0 0, ${sign * t * 0.4} ${-sign * r * 0.5}, ${sign * t * 0.5} ${-sign * r}
-            a ${r} ${r} 0 1 ${dir === 1 ? 1 : 0} ${sign * t} 0
-            c ${sign * t * 0.1} ${sign * r * 0.5}, ${sign * t * 0.5} ${sign * r}, ${sign * t * 0.5} ${sign * r}`;
-  };
-
-  // Build path clockwise: top, right, bottom, left
-  // Simplified approach with actual puzzle connectors
-  return generatePuzzleSVG(tabs);
-};
-
-// Generate puzzle piece as SVG path
-const generatePuzzleSVG = (tabs: { top: number; right: number; bottom: number; left: number }) => {
-  const w = 120;
-  const h = 100;
-  const tab = 16;
-  const neck = 6;
-
-  let d = `M 0 0`;
-
-  // Top edge
-  if (tabs.top !== 0) {
-    d += ` L ${w / 2 - neck} 0`;
-    d += tabs.top === 1
-      ? ` C ${w / 2 - neck} ${-tab * 0.3}, ${w / 2 - tab} ${-tab}, ${w / 2} ${-tab}
-         C ${w / 2 + tab} ${-tab}, ${w / 2 + neck} ${-tab * 0.3}, ${w / 2 + neck} 0`
-      : ` C ${w / 2 - neck} ${tab * 0.3}, ${w / 2 - tab} ${tab}, ${w / 2} ${tab}
-         C ${w / 2 + tab} ${tab}, ${w / 2 + neck} ${tab * 0.3}, ${w / 2 + neck} 0`;
-    d += ` L ${w} 0`;
-  } else {
-    d += ` L ${w} 0`;
-  }
-
-  // Right edge
-  if (tabs.right !== 0) {
-    d += ` L ${w} ${h / 2 - neck}`;
-    d += tabs.right === 1
-      ? ` C ${w + tab * 0.3} ${h / 2 - neck}, ${w + tab} ${h / 2 - tab}, ${w + tab} ${h / 2}
-         C ${w + tab} ${h / 2 + tab}, ${w + tab * 0.3} ${h / 2 + neck}, ${w} ${h / 2 + neck}`
-      : ` C ${w - tab * 0.3} ${h / 2 - neck}, ${w - tab} ${h / 2 - tab}, ${w - tab} ${h / 2}
-         C ${w - tab} ${h / 2 + tab}, ${w - tab * 0.3} ${h / 2 + neck}, ${w} ${h / 2 + neck}`;
-    d += ` L ${w} ${h}`;
-  } else {
-    d += ` L ${w} ${h}`;
-  }
-
-  // Bottom edge (right to left)
-  if (tabs.bottom !== 0) {
-    d += ` L ${w / 2 + neck} ${h}`;
-    d += tabs.bottom === 1
-      ? ` C ${w / 2 + neck} ${h + tab * 0.3}, ${w / 2 + tab} ${h + tab}, ${w / 2} ${h + tab}
-         C ${w / 2 - tab} ${h + tab}, ${w / 2 - neck} ${h + tab * 0.3}, ${w / 2 - neck} ${h}`
-      : ` C ${w / 2 + neck} ${h - tab * 0.3}, ${w / 2 + tab} ${h - tab}, ${w / 2} ${h - tab}
-         C ${w / 2 - tab} ${h - tab}, ${w / 2 - neck} ${h - tab * 0.3}, ${w / 2 - neck} ${h}`;
-    d += ` L 0 ${h}`;
-  } else {
-    d += ` L 0 ${h}`;
-  }
-
-  // Left edge (bottom to top)
-  if (tabs.left !== 0) {
-    d += ` L 0 ${h / 2 + neck}`;
-    d += tabs.left === 1
-      ? ` C ${-tab * 0.3} ${h / 2 + neck}, ${-tab} ${h / 2 + tab}, ${-tab} ${h / 2}
-         C ${-tab} ${h / 2 - tab}, ${-tab * 0.3} ${h / 2 - neck}, 0 ${h / 2 - neck}`
-      : ` C ${tab * 0.3} ${h / 2 + neck}, ${tab} ${h / 2 + tab}, ${tab} ${h / 2}
-         C ${tab} ${h / 2 - tab}, ${tab * 0.3} ${h / 2 - neck}, 0 ${h / 2 - neck}`;
-    d += ` L 0 0`;
-  } else {
-    d += ` L 0 0`;
-  }
-
-  d += " Z";
-  return d;
-};
-
-interface PuzzlePieceData {
+interface SubPiece {
   label: string;
-  icon: string;
-  color: string;
-  stroke: string;
-  glow: string;
-  tabs: { top: number; right: number; bottom: number; left: number };
-  finalX: number;
-  finalY: number;
-  startX: number;
-  startY: number;
-  startRotation: number;
   delay: number;
 }
 
-const pieces: PuzzlePieceData[] = [
+interface ModuleData {
+  label: string;
+  icon: string;
+  color: string;
+  border: string;
+  glow: string;
+  subPieces: SubPiece[];
+  position: { x: number; y: number };
+  startFrom: { x: number; y: number; rotate: number };
+  delay: number;
+}
+
+const modules: ModuleData[] = [
   {
     label: "Financeiro",
     icon: "💰",
-    color: "hsl(275, 60%, 25%)",
-    stroke: "hsl(275, 85%, 55%)",
-    glow: "hsl(275, 85%, 55%)",
-    tabs: { top: 0, right: 1, bottom: 1, left: 0 },
-    finalX: 0, finalY: 0,
-    startX: -180, startY: -120, startRotation: -25,
-    delay: 0.8,
+    color: "hsla(275, 60%, 30%, 0.12)",
+    border: "hsla(275, 85%, 55%, 0.4)",
+    glow: "hsla(275, 85%, 55%, 0.15)",
+    subPieces: [
+      { label: "Contas a Pagar", delay: 0.3 },
+      { label: "Contas a Receber", delay: 0.5 },
+      { label: "Fluxo de Caixa", delay: 0.7 },
+      { label: "Conciliação", delay: 0.9 },
+    ],
+    position: { x: 0, y: 0 },
+    startFrom: { x: -200, y: -80, rotate: -15 },
+    delay: 0.6,
   },
   {
     label: "Vendas",
     icon: "📊",
-    color: "hsl(43, 50%, 25%)",
-    stroke: "hsl(43, 100%, 55%)",
-    glow: "hsl(43, 100%, 55%)",
-    tabs: { top: 0, right: 0, bottom: 1, left: -1 },
-    finalX: 120, finalY: 0,
-    startX: 300, startY: -100, startRotation: 30,
-    delay: 1.2,
+    color: "hsla(43, 80%, 45%, 0.12)",
+    border: "hsla(43, 100%, 55%, 0.4)",
+    glow: "hsla(43, 100%, 55%, 0.15)",
+    subPieces: [
+      { label: "Pedidos", delay: 0.3 },
+      { label: "Comissões", delay: 0.5 },
+      { label: "Orçamentos", delay: 0.7 },
+      { label: "CRM", delay: 0.9 },
+    ],
+    position: { x: 1, y: 0 },
+    startFrom: { x: 200, y: -60, rotate: 12 },
+    delay: 1.0,
   },
   {
     label: "Estoque",
     icon: "📦",
-    color: "hsl(160, 50%, 20%)",
-    stroke: "hsl(160, 70%, 45%)",
-    glow: "hsl(160, 70%, 45%)",
-    tabs: { top: -1, right: 1, bottom: 0, left: 0 },
-    finalX: 0, finalY: 100,
-    startX: -200, startY: 250, startRotation: 20,
-    delay: 1.6,
+    color: "hsla(160, 60%, 30%, 0.12)",
+    border: "hsla(160, 70%, 45%, 0.4)",
+    glow: "hsla(160, 70%, 45%, 0.15)",
+    subPieces: [
+      { label: "Inventário", delay: 0.3 },
+      { label: "Movimentação", delay: 0.5 },
+      { label: "Lote / Validade", delay: 0.7 },
+      { label: "Compras", delay: 0.9 },
+    ],
+    position: { x: 0, y: 1 },
+    startFrom: { x: -180, y: 120, rotate: 18 },
+    delay: 1.4,
   },
   {
     label: "Fiscal",
     icon: "📋",
-    color: "hsl(210, 50%, 22%)",
-    stroke: "hsl(210, 80%, 55%)",
-    glow: "hsl(210, 80%, 55%)",
-    tabs: { top: -1, right: 0, bottom: 0, left: -1 },
-    finalX: 120, finalY: 100,
-    startX: 280, startY: 260, startRotation: -35,
-    delay: 2.0,
-  },
-  {
-    label: "GOAT",
-    icon: "⚡",
-    color: "hsl(275, 70%, 30%)",
-    stroke: "hsl(43, 100%, 55%)",
-    glow: "hsl(43, 100%, 55%)",
-    tabs: { top: 0, right: 0, bottom: 0, left: 0 },
-    finalX: 50, finalY: 42,
-    startX: 50, startY: -200, startRotation: 0,
-    delay: 2.6,
+    color: "hsla(210, 60%, 30%, 0.12)",
+    border: "hsla(210, 80%, 55%, 0.4)",
+    glow: "hsla(210, 80%, 55%, 0.15)",
+    subPieces: [
+      { label: "NF-e / NFS-e", delay: 0.3 },
+      { label: "SPED", delay: 0.5 },
+      { label: "Apuração", delay: 0.7 },
+      { label: "DARF", delay: 0.9 },
+    ],
+    position: { x: 1, y: 1 },
+    startFrom: { x: 220, y: 100, rotate: -20 },
+    delay: 1.8,
   },
 ];
 
-const AnimatedPuzzlePiece = ({ piece }: { piece: PuzzlePieceData }) => {
-  const path = generatePuzzleSVG(piece.tabs);
-  const isCore = piece.label === "GOAT";
+const ModulePiece = ({ mod }: { mod: ModuleData }) => {
+  const [showSubs, setShowSubs] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSubs(true), (mod.delay + 1.0) * 1000);
+    return () => clearTimeout(timer);
+  }, [mod.delay]);
 
   return (
-    <motion.g
+    <motion.div
+      className="relative"
       initial={{
-        x: piece.startX,
-        y: piece.startY,
-        rotate: piece.startRotation,
+        x: mod.startFrom.x,
+        y: mod.startFrom.y,
+        rotate: mod.startFrom.rotate,
         opacity: 0,
+        scale: 0.7,
       }}
       animate={{
-        x: piece.finalX,
-        y: piece.finalY,
+        x: 0,
+        y: 0,
         rotate: 0,
         opacity: 1,
+        scale: 1,
       }}
       transition={{
-        delay: piece.delay,
-        duration: 1.2,
+        delay: mod.delay,
+        duration: 0.9,
         type: "spring",
-        stiffness: 60,
-        damping: 14,
+        stiffness: 70,
+        damping: 15,
       }}
     >
-      {/* Glow filter */}
-      <defs>
-        <filter id={`glow-${piece.label}`} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feFlood floodColor={piece.glow} floodOpacity="0.3" />
-          <feComposite in2="blur" operator="in" />
-          <feMerge>
-            <feMergeNode />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <linearGradient id={`grad-${piece.label}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={piece.color} stopOpacity="0.9" />
-          <stop offset="100%" stopColor={piece.color} stopOpacity="0.6" />
-        </linearGradient>
-      </defs>
-
-      {!isCore && (
-        <path
-          d={path}
-          fill={`url(#grad-${piece.label})`}
-          stroke={piece.stroke}
-          strokeWidth="1.5"
-          strokeOpacity="0.6"
-          filter={`url(#glow-${piece.label})`}
-        />
-      )}
-
-      {isCore ? (
-        <>
-          <rect
-            x="25"
-            y="20"
-            width="70"
-            height="60"
-            rx="12"
-            fill="url(#coreGrad)"
-            stroke="hsl(43, 100%, 55%)"
-            strokeWidth="2"
-            strokeOpacity="0.8"
-            filter={`url(#glow-${piece.label})`}
+      {/* Main module card */}
+      <motion.div
+        className="relative w-[170px] h-[170px] rounded-2xl border backdrop-blur-sm overflow-hidden cursor-default"
+        style={{
+          backgroundColor: mod.color,
+          borderColor: mod.border,
+          boxShadow: `0 0 30px ${mod.glow}`,
+        }}
+        whileHover={{ scale: 1.04, boxShadow: `0 0 50px ${mod.glow}` }}
+        transition={{ duration: 0.2 }}
+      >
+        {/* Puzzle tab connectors */}
+        {mod.position.x === 0 && (
+          <div
+            className="absolute -right-[8px] top-1/2 -translate-y-1/2 w-4 h-6 rounded-r-full"
+            style={{ backgroundColor: mod.border, opacity: 0.5 }}
           />
-          <text
-            x="60"
-            y="48"
-            textAnchor="middle"
-            fill="white"
-            fontSize="14"
-            fontWeight="800"
-            fontFamily="inherit"
-          >
-            GOAT
-          </text>
-          <text
-            x="60"
-            y="63"
-            textAnchor="middle"
-            fill="hsla(43, 100%, 70%, 0.9)"
-            fontSize="9"
-            fontWeight="600"
-          >
-            Core
-          </text>
-        </>
-      ) : (
-        <>
-          <text x="60" y="42" textAnchor="middle" fontSize="22">
-            {piece.icon}
-          </text>
-          <text
-            x="60"
-            y="65"
-            textAnchor="middle"
-            fill="white"
-            fontSize="11"
-            fontWeight="700"
-            opacity="0.9"
-          >
-            {piece.label}
-          </text>
-        </>
-      )}
-    </motion.g>
+        )}
+        {mod.position.x === 1 && (
+          <div
+            className="absolute -left-[8px] top-1/2 -translate-y-1/2 w-4 h-6 rounded-l-full"
+            style={{ backgroundColor: mod.border, opacity: 0.5 }}
+          />
+        )}
+        {mod.position.y === 0 && (
+          <div
+            className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-6 h-4 rounded-b-full"
+            style={{ backgroundColor: mod.border, opacity: 0.5 }}
+          />
+        )}
+        {mod.position.y === 1 && (
+          <div
+            className="absolute -top-[8px] left-1/2 -translate-x-1/2 w-6 h-4 rounded-t-full"
+            style={{ backgroundColor: mod.border, opacity: 0.5 }}
+          />
+        )}
+
+        {/* Module header */}
+        <div className="px-3 pt-3 pb-2 flex items-center gap-2">
+          <span className="text-lg">{mod.icon}</span>
+          <span className="text-xs font-bold text-foreground/90 tracking-wide uppercase">
+            {mod.label}
+          </span>
+        </div>
+
+        {/* Sub-pieces */}
+        <div className="px-2.5 space-y-1">
+          <AnimatePresence>
+            {showSubs &&
+              mod.subPieces.map((sub, i) => (
+                <motion.div
+                  key={sub.label}
+                  initial={{ opacity: 0, x: -20, scale: 0.8 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{
+                    delay: sub.delay,
+                    duration: 0.4,
+                    type: "spring",
+                    stiffness: 120,
+                    damping: 12,
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-medium text-foreground/75"
+                  style={{
+                    borderColor: mod.border,
+                    backgroundColor: `${mod.color}`,
+                  }}
+                >
+                  <motion.div
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: mod.border }}
+                    animate={{
+                      scale: [1, 1.4, 1],
+                      opacity: [0.7, 1, 0.7],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      delay: i * 0.5,
+                    }}
+                  />
+                  {sub.label}
+                </motion.div>
+              ))}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
-// Particle that flies in when pieces connect
-const ConnectionSpark = ({ delay, x, y }: { delay: number; x: number; y: number }) => (
-  <motion.circle
-    cx={x}
-    cy={y}
-    r="2"
-    fill="hsl(43, 100%, 60%)"
-    initial={{ opacity: 0, scale: 0 }}
-    animate={{
-      opacity: [0, 1, 0],
-      scale: [0, 2, 0],
-      y: [y, y - 15],
-    }}
-    transition={{
-      delay,
-      duration: 0.6,
-      ease: "easeOut",
-    }}
-  />
-);
+// Connection lines between modules
+const ConnectionLines = () => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(true), 2800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+      className="absolute inset-0 pointer-events-none"
+    >
+      <svg className="w-full h-full absolute inset-0" style={{ overflow: "visible" }}>
+        {/* Horizontal line */}
+        <motion.line
+          x1="48%" y1="35%" x2="52%" y2="35%"
+          stroke="hsla(275, 85%, 55%, 0.3)"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.6 }}
+        />
+        <motion.line
+          x1="48%" y1="65%" x2="52%" y2="65%"
+          stroke="hsla(275, 85%, 55%, 0.3)"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        />
+        {/* Vertical lines */}
+        <motion.line
+          x1="35%" y1="48%" x2="35%" y2="52%"
+          stroke="hsla(275, 85%, 55%, 0.3)"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        />
+        <motion.line
+          x1="65%" y1="48%" x2="65%" y2="52%"
+          stroke="hsla(275, 85%, 55%, 0.3)"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        />
+      </svg>
+    </motion.div>
+  );
+};
+
+// Central GOAT badge
+const CoreBadge = () => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(true), 3200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 200, damping: 15 }}
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20"
+    >
+      <motion.div
+        className="w-16 h-16 rounded-xl bg-gradient-primary flex flex-col items-center justify-center shadow-glow-lg border border-primary/30"
+        animate={{
+          boxShadow: [
+            "0 0 20px hsla(275, 85%, 55%, 0.3)",
+            "0 0 40px hsla(275, 85%, 55%, 0.5)",
+            "0 0 20px hsla(275, 85%, 55%, 0.3)",
+          ],
+        }}
+        transition={{ duration: 3, repeat: Infinity }}
+      >
+        <span className="text-primary-foreground text-xs font-extrabold tracking-wider">GOAT</span>
+        <span className="text-accent text-[8px] font-semibold">Core</span>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const HeroSection = () => {
   return (
@@ -362,71 +376,21 @@ const HeroSection = () => {
 
           {/* Visual: Puzzle Assembly */}
           <div className="relative h-[480px] lg:h-[540px] hidden lg:flex items-center justify-center">
-            {/* Ambient glow behind puzzle */}
-            <div className="absolute w-[320px] h-[280px] bg-primary/10 blur-[60px] rounded-full" />
-            <div className="absolute w-[200px] h-[200px] bg-accent/8 blur-[50px] rounded-full translate-x-8 translate-y-4" />
+            {/* Ambient glow */}
+            <div className="absolute w-[400px] h-[400px] bg-primary/6 blur-[80px] rounded-full" />
 
-            <svg
-              viewBox="-50 -50 300 260"
-              className="w-full max-w-[520px] h-auto relative z-10"
-              style={{ overflow: "visible" }}
-            >
-              <defs>
-                <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="hsl(275, 85%, 45%)" />
-                  <stop offset="100%" stopColor="hsl(275, 70%, 35%)" />
-                </linearGradient>
-              </defs>
-
-              {/* Puzzle pieces */}
-              {pieces.map((piece) => (
-                <AnimatedPuzzlePiece key={piece.label} piece={piece} />
+            {/* 2x2 Grid of modules */}
+            <div className="relative grid grid-cols-2 gap-4">
+              {modules.map((mod) => (
+                <ModulePiece key={mod.label} mod={mod} />
               ))}
 
-              {/* Connection sparks where pieces meet */}
-              <ConnectionSpark delay={2.2} x={120} y={50} />
-              <ConnectionSpark delay={2.2} x={125} y={55} />
-              <ConnectionSpark delay={2.6} x={60} y={100} />
-              <ConnectionSpark delay={2.6} x={55} y={95} />
-              <ConnectionSpark delay={3.0} x={120} y={100} />
-              <ConnectionSpark delay={3.0} x={125} y={105} />
+              {/* Connection lines */}
+              <ConnectionLines />
 
-              {/* Subtle floating particles */}
-              {[...Array(6)].map((_, i) => (
-                <motion.circle
-                  key={`p-${i}`}
-                  cx={-20 + Math.random() * 240}
-                  cy={-20 + Math.random() * 220}
-                  r="1"
-                  fill="hsl(275, 80%, 60%)"
-                  fillOpacity="0.4"
-                  animate={{ opacity: [0.2, 0.6, 0.2] }}
-                  transition={{
-                    duration: 3 + Math.random() * 2,
-                    repeat: Infinity,
-                    delay: Math.random() * 3,
-                  }}
-                />
-              ))}
-            </svg>
-
-            {/* Labels floating around puzzle */}
-            {[
-              { text: "Contas a Pagar", x: "-left-4", y: "top-[20%]", delay: 3.2 },
-              { text: "NF-e", x: "-right-2", y: "top-[25%]", delay: 3.4 },
-              { text: "Inventário", x: "-left-2", y: "bottom-[25%]", delay: 3.6 },
-              { text: "Comissões", x: "-right-4", y: "bottom-[20%]", delay: 3.8 },
-            ].map((tag) => (
-              <motion.div
-                key={tag.text}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: tag.delay, duration: 0.5 }}
-                className={`absolute ${tag.x} ${tag.y} px-2.5 py-1 rounded-md border border-primary/20 bg-card/80 backdrop-blur-sm text-[10px] font-medium text-muted-foreground`}
-              >
-                {tag.text}
-              </motion.div>
-            ))}
+              {/* Central GOAT Core badge */}
+              <CoreBadge />
+            </div>
           </div>
         </div>
       </div>
