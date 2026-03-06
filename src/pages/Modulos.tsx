@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Navbar from "@/components/Navbar";
+import SystemBuilderSection from "@/components/SystemBuilderSection";
 import Footer from "@/components/Footer";
 
 interface SubModule {
