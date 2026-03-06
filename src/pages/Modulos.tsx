@@ -465,7 +465,7 @@ const Modulos = () => {
         </div>
       </section>
 
-      {/* Modules */}
+      {/* Modules detail */}
       <section className="pb-24">
         <div className="container mx-auto px-4 sm:px-6 space-y-20">
           {moduleCategories.map((cat, i) => (
@@ -473,6 +473,9 @@ const Modulos = () => {
           ))}
         </div>
       </section>
+
+      {/* Interactive System Builder */}
+      <SystemBuilderSection />
 
       {/* CTA */}
       <section className="py-16 relative">
@@ -487,15 +490,13 @@ const Modulos = () => {
               Pronto para <span className="text-gradient">montar seu sistema</span>?
             </h2>
             <p className="text-muted-foreground mb-6">
-              Selecione exatamente as peças que sua empresa precisa no nosso construtor interativo.
+              Fale com um especialista e receba uma proposta personalizada.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/#montar">
-                <Button size="lg" className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow gap-2">
-                  Montar Meu Sistema
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
+              <Button size="lg" className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow gap-2">
+                Solicitar Proposta
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </div>
           </motion.div>
         </div>
