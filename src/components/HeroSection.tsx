@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 interface SubPiece {
   label: string;
@@ -426,13 +427,15 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <Button
-                size="lg"
-                className="bg-gradient-primary hover:opacity-90 text-primary-foreground border-0 shadow-glow gap-2 text-base px-8"
-              >
-                Montar Meu Sistema
-                <ArrowRight size={18} />
-              </Button>
+              <Link to="/modulos">
+                <Button
+                  size="lg"
+                  className="bg-gradient-primary hover:opacity-90 text-primary-foreground border-0 shadow-glow gap-2 text-base px-8"
+                >
+                  Montar Meu Sistema
+                  <ArrowRight size={18} />
+                </Button>
+              </Link>
               <Button
                 size="lg"
                 variant="outline"
