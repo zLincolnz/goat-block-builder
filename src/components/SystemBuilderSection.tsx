@@ -138,25 +138,34 @@ const SystemBuilderSection = () => {
                 const count = getCategoryCount(cat.id);
                 return (
                   <div key={cat.id} className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
-                    <button
-                      onClick={() => toggleCategory(cat.id)}
-                      className="w-full flex items-center gap-2.5 p-3 hover:bg-muted/30 transition-colors text-left"
-                    >
-                      <div className={`p-1.5 rounded-lg bg-gradient-to-br ${cat.color}`}>
-                        {cat.icon}
-                      </div>
-                      <span className="font-medium text-sm flex-1">{cat.name}</span>
-                      {count > 0 && (
-                        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold">
-                          {count}
-                        </span>
-                      )}
-                      {isExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                      )}
-                    </button>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => toggleCategory(cat.id)}
+                        className="flex-1 flex items-center gap-2.5 p-3 hover:bg-muted/30 transition-colors text-left"
+                      >
+                        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${cat.color}`}>
+                          {cat.icon}
+                        </div>
+                        <span className="font-medium text-sm flex-1">{cat.name}</span>
+                        {count > 0 && (
+                          <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold">
+                            {count}
+                          </span>
+                        )}
+                        {isExpanded ? (
+                          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                        )}
+                      </button>
+                      <Link
+                        to={`/modulo/${cat.id}`}
+                        className="p-2.5 mr-1 hover:bg-muted/40 rounded-lg transition-colors group/info"
+                        title="Saiba mais sobre este módulo"
+                      >
+                        <Info className="w-4 h-4 text-muted-foreground group-hover/info:text-primary transition-colors" />
+                      </Link>
+                    </div>
 
                     <AnimatePresence>
                       {isExpanded && (
