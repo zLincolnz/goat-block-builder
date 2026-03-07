@@ -49,7 +49,7 @@ const SystemBuilderSection = () => {
 
   const isSubModuleSelected = (subId: string) => selected.some((s) => s.id === subId);
 
-  const addSubModule = (cat: ModuleCategory, sub: SubModule) => {
+  const addSubModule = (cat: ModuleCategorySimple, sub: SubModuleSimple) => {
     if (isSubModuleSelected(sub.id)) return;
     setSelected((prev) => [
       ...prev,
