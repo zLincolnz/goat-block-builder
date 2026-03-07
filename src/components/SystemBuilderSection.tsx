@@ -1,173 +1,32 @@
-import { motion, AnimatePresence, Reorder } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  DollarSign,
-  ShoppingCart,
-  Package,
-  FileText,
-  Settings,
-  BarChart3,
-  Users,
-  Mail,
   Plus,
   X,
-  GripVertical,
   Puzzle,
   ArrowRight,
   Sparkles,
   ChevronDown,
   ChevronRight,
-  CreditCard,
-  Wallet,
-  Building2,
-  TrendingUp,
-  Receipt,
-  ShoppingBag,
-  Target,
-  Percent,
-  Truck,
-  ClipboardList,
-  RotateCcw,
-  ScanBarcode,
-  FileCheck,
-  Calculator,
-  FileBadge,
-  Gavel,
-  Cog,
-  Zap,
-  ListChecks,
-  Clock,
-  PieChart,
-  LineChart,
-  Activity,
-  Monitor,
-  UserCheck,
-  CalendarDays,
-  BadgeDollarSign,
-  GraduationCap,
-  MessageSquare,
-  Contact,
-  Handshake,
-  Megaphone,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { moduleCategories } from "@/data/moduleCategories";
 
-interface SubModule {
+interface SubModuleSimple {
   id: string;
   name: string;
   icon: React.ReactNode;
 }
 
-interface ModuleCategory {
+interface ModuleCategorySimple {
   id: string;
   name: string;
   icon: React.ReactNode;
   color: string;
-  subModules: SubModule[];
+  subModules: SubModuleSimple[];
 }
-
-const moduleCategories: ModuleCategory[] = [
-  {
-    id: "financeiro",
-    name: "Financeiro",
-    icon: <DollarSign className="w-4 h-4" />,
-    color: "from-violet-500/20 to-purple-500/20 border-violet-500/30 text-violet-400",
-    subModules: [
-      { id: "contas-pagar", name: "Contas a Pagar", icon: <CreditCard className="w-3.5 h-3.5" /> },
-      { id: "contas-receber", name: "Contas a Receber", icon: <Wallet className="w-3.5 h-3.5" /> },
-      { id: "conciliacao", name: "Conciliação Bancária", icon: <Building2 className="w-3.5 h-3.5" /> },
-      { id: "fluxo-caixa", name: "Fluxo de Caixa", icon: <TrendingUp className="w-3.5 h-3.5" /> },
-      { id: "integracao-banco", name: "Integração com Banco", icon: <Building2 className="w-3.5 h-3.5" /> },
-      { id: "dre", name: "DRE e Balanço", icon: <Receipt className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    id: "vendas",
-    name: "Vendas",
-    icon: <ShoppingCart className="w-4 h-4" />,
-    color: "from-blue-500/20 to-cyan-500/20 border-blue-500/30 text-blue-400",
-    subModules: [
-      { id: "pedidos", name: "Pedidos de Venda", icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-      { id: "orcamentos", name: "Orçamentos", icon: <FileText className="w-3.5 h-3.5" /> },
-      { id: "funil-vendas", name: "Funil de Vendas", icon: <Target className="w-3.5 h-3.5" /> },
-      { id: "comissoes", name: "Comissões", icon: <Percent className="w-3.5 h-3.5" /> },
-      { id: "tabela-precos", name: "Tabela de Preços", icon: <Receipt className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    id: "estoque",
-    name: "Estoque",
-    icon: <Package className="w-4 h-4" />,
-    color: "from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-400",
-    subModules: [
-      { id: "controle-estoque", name: "Controle de Estoque", icon: <Package className="w-3.5 h-3.5" /> },
-      { id: "movimentacoes", name: "Movimentações", icon: <Truck className="w-3.5 h-3.5" /> },
-      { id: "inventario", name: "Inventário", icon: <ClipboardList className="w-3.5 h-3.5" /> },
-      { id: "devolucoes", name: "Devoluções", icon: <RotateCcw className="w-3.5 h-3.5" /> },
-      { id: "codigo-barras", name: "Código de Barras", icon: <ScanBarcode className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    id: "fiscal",
-    name: "Fiscal",
-    icon: <FileText className="w-4 h-4" />,
-    color: "from-emerald-500/20 to-green-500/20 border-emerald-500/30 text-emerald-400",
-    subModules: [
-      { id: "nfe", name: "Emissão de NF-e", icon: <FileCheck className="w-3.5 h-3.5" /> },
-      { id: "impostos", name: "Cálculo de Impostos", icon: <Calculator className="w-3.5 h-3.5" /> },
-      { id: "sped", name: "SPED Fiscal", icon: <FileBadge className="w-3.5 h-3.5" /> },
-      { id: "obrigacoes", name: "Obrigações Acessórias", icon: <Gavel className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    id: "operacional",
-    name: "Operacional",
-    icon: <Settings className="w-4 h-4" />,
-    color: "from-rose-500/20 to-pink-500/20 border-rose-500/30 text-rose-400",
-    subModules: [
-      { id: "processos", name: "Gestão de Processos", icon: <Cog className="w-3.5 h-3.5" /> },
-      { id: "automacoes", name: "Automações", icon: <Zap className="w-3.5 h-3.5" /> },
-      { id: "tarefas", name: "Tarefas e Checklists", icon: <ListChecks className="w-3.5 h-3.5" /> },
-      { id: "sla", name: "SLA e Prazos", icon: <Clock className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    id: "dashboards",
-    name: "Dashboards",
-    icon: <BarChart3 className="w-4 h-4" />,
-    color: "from-indigo-500/20 to-violet-500/20 border-indigo-500/30 text-indigo-400",
-    subModules: [
-      { id: "kpis", name: "KPIs em Tempo Real", icon: <PieChart className="w-3.5 h-3.5" /> },
-      { id: "relatorios", name: "Relatórios Gerenciais", icon: <LineChart className="w-3.5 h-3.5" /> },
-      { id: "bi", name: "Business Intelligence", icon: <Activity className="w-3.5 h-3.5" /> },
-      { id: "painel-gestor", name: "Painel do Gestor", icon: <Monitor className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    id: "rh",
-    name: "RH & Pessoas",
-    icon: <Users className="w-4 h-4" />,
-    color: "from-teal-500/20 to-emerald-500/20 border-teal-500/30 text-teal-400",
-    subModules: [
-      { id: "colaboradores", name: "Cadastro de Colaboradores", icon: <UserCheck className="w-3.5 h-3.5" /> },
-      { id: "ponto", name: "Controle de Ponto", icon: <CalendarDays className="w-3.5 h-3.5" /> },
-      { id: "folha", name: "Folha de Pagamento", icon: <BadgeDollarSign className="w-3.5 h-3.5" /> },
-      { id: "treinamentos", name: "Treinamentos", icon: <GraduationCap className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    id: "crm",
-    name: "CRM",
-    icon: <Mail className="w-4 h-4" />,
-    color: "from-fuchsia-500/20 to-purple-500/20 border-fuchsia-500/30 text-fuchsia-400",
-    subModules: [
-      { id: "leads", name: "Gestão de Leads", icon: <MessageSquare className="w-3.5 h-3.5" /> },
-      { id: "clientes", name: "Base de Clientes", icon: <Contact className="w-3.5 h-3.5" /> },
-      { id: "pos-venda", name: "Pós-Venda", icon: <Handshake className="w-3.5 h-3.5" /> },
-      { id: "campanhas", name: "Campanhas", icon: <Megaphone className="w-3.5 h-3.5" /> },
-    ],
-  },
-];
 
 interface SelectedItem {
   id: string;
@@ -190,7 +49,7 @@ const SystemBuilderSection = () => {
 
   const isSubModuleSelected = (subId: string) => selected.some((s) => s.id === subId);
 
-  const addSubModule = (cat: ModuleCategory, sub: SubModule) => {
+  const addSubModule = (cat: ModuleCategorySimple, sub: SubModuleSimple) => {
     if (isSubModuleSelected(sub.id)) return;
     setSelected((prev) => [
       ...prev,
@@ -279,25 +138,34 @@ const SystemBuilderSection = () => {
                 const count = getCategoryCount(cat.id);
                 return (
                   <div key={cat.id} className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
-                    <button
-                      onClick={() => toggleCategory(cat.id)}
-                      className="w-full flex items-center gap-2.5 p-3 hover:bg-muted/30 transition-colors text-left"
-                    >
-                      <div className={`p-1.5 rounded-lg bg-gradient-to-br ${cat.color}`}>
-                        {cat.icon}
-                      </div>
-                      <span className="font-medium text-sm flex-1">{cat.name}</span>
-                      {count > 0 && (
-                        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold">
-                          {count}
-                        </span>
-                      )}
-                      {isExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                      )}
-                    </button>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => toggleCategory(cat.id)}
+                        className="flex-1 flex items-center gap-2.5 p-3 hover:bg-muted/30 transition-colors text-left"
+                      >
+                        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${cat.color}`}>
+                          {cat.icon}
+                        </div>
+                        <span className="font-medium text-sm flex-1">{cat.name}</span>
+                        {count > 0 && (
+                          <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold">
+                            {count}
+                          </span>
+                        )}
+                        {isExpanded ? (
+                          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                        )}
+                      </button>
+                      <Link
+                        to={`/modulo/${cat.id}`}
+                        className="p-2.5 mr-1 hover:bg-muted/40 rounded-lg transition-colors group/info"
+                        title="Saiba mais sobre este módulo"
+                      >
+                        <Info className="w-4 h-4 text-muted-foreground group-hover/info:text-primary transition-colors" />
+                      </Link>
+                    </div>
 
                     <AnimatePresence>
                       {isExpanded && (
